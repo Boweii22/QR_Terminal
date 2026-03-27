@@ -1,0 +1,33 @@
+{
+  "name": "qr-terminal",
+  "version": "1.0.0",
+  "description": "Cinematic terminal QR code generator — half-block, braille, particle fly-in, matrix rain, device handshake",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "qr-terminal": "./index.js",
+    "qr": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "preferGlobal": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["qr", "qr-code", "terminal", "cli", "tui", "unicode", "half-block"],
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^7.0.0",
+    "axios": "^1.7.7",
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0",
+    "clipboardy": "^4.0.0",
+    "figlet": "^1.7.0",
+    "gradient-string": "^2.0.2",
+    "localtunnel": "^2.0.2",
+    "ora": "^8.1.0",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.0"
+  }
+}
