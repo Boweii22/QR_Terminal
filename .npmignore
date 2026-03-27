@@ -1,0 +1,7 @@
+node_modules/
+.git/
+*.svg
+*.txt
+*.png
+test-output.*
+.gitignore

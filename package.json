@@ -15,8 +15,22 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["qr", "qr-code", "terminal", "cli", "tui", "unicode", "half-block"],
+  "keywords": ["qr", "qr-code", "terminal", "cli", "tui", "unicode", "half-block", "braille", "gradient", "websocket", "generator"],
+  "author": "Boweii22",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Boweii22/QR_Terminal.git"
+  },
+  "homepage": "https://github.com/Boweii22/QR_Terminal#readme",
+  "bugs": {
+    "url": "https://github.com/Boweii22/QR_Terminal/issues"
+  },
+  "files": [
+    "index.js",
+    "src/",
+    "README.md"
+  ],
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
     "axios": "^1.7.7",
