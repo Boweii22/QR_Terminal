@@ -3,7 +3,7 @@
  * Orchestrates inquirer prompts → live preview → QR generation → export.
  */
 
-import { select, input, confirm, checkbox, password } from '@inquirer/prompts';
+import { select, input, confirm, password } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import clipboard from 'clipboardy';
@@ -376,52 +376,38 @@ async function renderAndExport({
   }
 
   // ──────────────────────────────────────────────
-  // STEP 7 — Post-generation actions
+  // STEP 7 — Post-generation actions (looped select)
   // ──────────────────────────────────────────────
   printDivider('Export');
 
-  const actions = await checkbox({
-    message: chalk.bold('What would you like to do with this QR code?'),
-    choices: [
-      {
-        name:    '  📋  Copy ASCII to clipboard  (paste into Slack, README, terminal)',
-        value:   'clipboard',
-        checked: true,
-      },
-      {
-        name:  '  🖼   Save as PNG  (high-res image)',
-        value: 'png',
-      },
-      {
-        name:  '  📐  Save as SVG  (scalable vector)',
-        value: 'svg',
-      },
-      {
-        name:  '  📄  Save as PDF  (A4 document, print-ready)',
-        value: 'pdf',
-      },
-      {
-        name:  '  🎞   Save as GIF  (animated particle fly-in)',
-        value: 'gif',
-      },
-      {
-        name:  '  📝  Save as TXT  (plain Unicode half-blocks)',
-        value: 'txt',
-      },
-      ...(inputType !== 'secret' ? [{
-        name:  '  🔗  Get shareable link  (opens QR in any browser)',
-        value: 'share',
-      }] : []),
-      {
-        name:  '  ☠   Self-destruct share  (host file via public QR, auto-destroy on download)',
-        value: 'destruct',
-      },
-    ],
-  });
+  const exportChoices = [
+    { name: '  📋  Copy ASCII to clipboard', value: 'clipboard' },
+    { name: '  🖼   Save as PNG',             value: 'png'       },
+    { name: '  📐  Save as SVG',             value: 'svg'       },
+    { name: '  📄  Save as PDF',             value: 'pdf'       },
+    { name: '  🎞   Save as GIF',            value: 'gif'       },
+    { name: '  📝  Save as TXT',             value: 'txt'       },
+    ...(inputType !== 'secret'
+      ? [{ name: '  🔗  Get shareable link', value: 'share' }]
+      : []),
+    { name: '  ☠   Self-destruct share',    value: 'destruct'  },
+    { name: '  ✓   Done',                   value: 'done'      },
+  ];
 
-  console.log();
+  // Reset terminal state after animations before prompting
+  process.stdout.write('\x1b[?25h\x1b[0m');
 
-  for (const action of actions) {
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const action = await select({
+      message: chalk.bold('What would you like to do?  (pick one, repeat as needed)'),
+      choices: exportChoices,
+    });
+
+    if (action === 'done') break;
+
+    console.log();
+
     switch (action) {
 
       case 'clipboard': {
@@ -564,9 +550,10 @@ async function renderAndExport({
         break;
       }
     }
+
+    console.log();
   }
 
-  console.log();
   printDivider();
   log.tip('Hold your phone camera over the QR code — no scanner app needed on iOS 11+ / Android 10+.');
   log.info(`Encoded ${qrData.length} characters with ${errorLevel}-level error correction.`);
