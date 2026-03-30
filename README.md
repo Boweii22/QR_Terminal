@@ -2,23 +2,20 @@
 
 A cinematic, interactive QR code generator that runs entirely in your terminal.
 
-Generate QR codes for URLs, WiFi networks, contacts, and secrets — with live preview, animated rendering, gradient colors, phone handshake, and one-click export.
+Generate QR codes for URLs, WiFi networks, contacts, and secrets — with live preview, animated rendering, gradient colors, history recall, PDF/GIF export, shareable links, and phone handshake.
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/Boweii22/QR_Terminal.git
-cd QR_Terminal
-npm install
-npm start
+npx qr-terminal
 ```
 
-### Install globally (run `qr` from anywhere)
+Or install globally so you can run it from anywhere:
 
 ```bash
-npm link
+npm install -g qr-terminal
 qr
 ```
 
@@ -30,12 +27,12 @@ qr
 
 Launch it and follow the prompts. You'll pick:
 
-1. **What to encode** — URL, WiFi, contact card, or secret text
+1. **What to encode** — URL, WiFi, contact card, secret text, or recall from history
 2. **Error correction** — how much damage the QR can survive
 3. **Color theme** — 10 gradient options
 4. **Render engine** — how the QR appears on screen
 
-Then after it renders, you can copy it, save it as an image, or share it.
+After it renders, export it, share it, or go straight back to the main menu.
 
 ---
 
@@ -55,7 +52,7 @@ Share your contact info as a QR code. Anyone who scans it gets a prompt to save 
 Fields: name, phone, email, organisation, website.
 
 ### Secret Text
-Encode anything sensitive — API keys, passwords, tokens. Input is masked while you type.
+Encode anything sensitive — API keys, passwords, tokens. Input is masked while you type. Secrets are never saved to history.
 
 ---
 
@@ -106,15 +103,38 @@ All themes use 24-bit TrueColor applied per character — not per row — so gra
 
 ## Export Options
 
-After any QR renders, choose what to do with it:
+After any QR renders, pick from the export menu (you can run multiple actions before going back):
 
 | Option | What you get |
 |---|---|
 | Copy to clipboard | Plain Unicode characters — paste into Slack, a README, or any terminal |
 | Save as PNG | High-resolution image file (600px) |
 | Save as SVG | Scalable vector — perfect for print or presentations |
+| Save as PDF | A4 print-ready document with the QR centered and labelled |
+| Save as GIF | Animated particle fly-in GIF if using Particle/Matrix engine, static colored GIF otherwise |
 | Save as TXT | Plain text half-block file |
+| Get shareable link | A URL that opens the QR as an image in any browser — copy and paste anywhere |
 | Self-destruct share | One-time public link for a file (see below) |
+
+---
+
+## History
+
+Every QR you generate is automatically saved to `~/.qr-history.json` (last 20, newest first).
+
+Select **View History** from the main menu to browse and re-render any past code instantly — same gradient, error correction, and render engine as before. Secrets are never stored.
+
+---
+
+## Shareable Link
+
+After generating any non-secret QR, choose **Get shareable link** from the export menu. You'll get a URL like:
+
+```
+https://quickchart.io/qr?text=...
+```
+
+Paste it into a chat, email, or browser — anyone who opens it sees the QR code as an image, no app or terminal needed.
 
 ---
 
@@ -132,11 +152,31 @@ The file is never written anywhere — it lives in RAM only.
 
 ---
 
+## Plain / No-Color Mode
+
+For CI pipelines, SSH sessions, or terminals without color support:
+
+```bash
+qr --plain
+# or
+qr --no-color
+```
+
+Outputs a raw ASCII QR code (`█▀▄`) with no animations or ANSI color codes — safe to pipe, log, or redirect.
+
+---
+
 ## Auto Theme Detection
 
 When the tool starts, it silently queries your terminal's actual background color using the OSC 11 escape sequence. If you're on a light-background theme (Solarized Light, GitHub Light, etc.) it detects this automatically and warns you so you can choose a high-contrast color theme.
 
 Works with: iTerm2, Windows Terminal, Terminal.app, Kitty, Alacritty, xterm-compatible emulators.
+
+---
+
+## Navigation
+
+Every menu has a **← Back** option — you never need to restart the terminal to change your mind. The app stays open between QR generations until you pick **Exit** from the main menu or press `Ctrl+C`.
 
 ---
 
@@ -150,7 +190,7 @@ Works with: iTerm2, Windows Terminal, Terminal.app, Kitty, Alacritty, xterm-comp
   - Alacritty ✓
   - VS Code integrated terminal ✓
 - Phone on the same WiFi network (Device Link mode only)
-- Internet connection (TinyURL shortening and self-destruct tunnel only)
+- Internet connection (TinyURL shortening, shareable links, and self-destruct tunnel only)
 
 ---
 
