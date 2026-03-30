@@ -26,40 +26,28 @@ import { buildShareableLink } from './shareable.js';
 
 const isPlain = process.env._QR_PLAIN === '1';
 
+const BACK = '__back__';
+
 export async function runMainFlow() {
+  // Outer loop — keeps the app alive between sessions
+  while (true) {
+
   // ──────────────────────────────────────────────
   // STEP 1 — Input type selection
   // ──────────────────────────────────────────────
   const inputType = await select({
     message: chalk.bold('What do you want to encode?'),
     choices: [
-      {
-        name:        '  🔗  URL / Link',
-        value:       'url',
-        description: 'Website, app deep-link, or any HTTP address',
-      },
-      {
-        name:        '  📶  WiFi Credentials',
-        value:       'wifi',
-        description: 'Tap-to-join network QR (iOS 11+ / Android 10+)',
-      },
-      {
-        name:        '  👤  vCard Contact',
-        value:       'vcard',
-        description: 'Share your contact card — imports directly to address book',
-      },
-      {
-        name:        '  🔒  Secret Text',
-        value:       'secret',
-        description: 'Tokens, keys, passwords, or any sensitive payload',
-      },
-      {
-        name:        '  🕐  View History',
-        value:       'history',
-        description: 'Recall and re-render a previously generated QR code',
-      },
+      { name: '  🔗  URL / Link',       value: 'url',     description: 'Website, app deep-link, or any HTTP address' },
+      { name: '  📶  WiFi Credentials', value: 'wifi',    description: 'Tap-to-join network QR (iOS 11+ / Android 10+)' },
+      { name: '  👤  vCard Contact',    value: 'vcard',   description: 'Share your contact card — imports directly to address book' },
+      { name: '  🔒  Secret Text',      value: 'secret',  description: 'Tokens, keys, passwords, or any sensitive payload' },
+      { name: '  🕐  View History',     value: 'history', description: 'Recall and re-render a previously generated QR code' },
+      { name: '  ✕   Exit',            value: 'exit' },
     ],
   });
+
+  if (inputType === 'exit') break;
 
   // ──────────────────────────────────────────────
   // HISTORY — recall a past QR
@@ -68,26 +56,30 @@ export async function runMainFlow() {
     const history = await loadHistory();
     if (!history.entries.length) {
       log.info('No history yet — generate a QR first.');
-      return;
+      continue; // back to main menu
     }
 
     const entry = await select({
-      message: chalk.bold('Pick a previous QR to re-render:'),
-      choices: history.entries.map((e, i) => historyChoice(e, i)),
-      pageSize: 10,
+      message:  chalk.bold('Pick a previous QR to re-render:'),
+      choices:  [
+        { name: '  ←  Back to main menu', value: BACK },
+        ...history.entries.map((e, i) => historyChoice(e, i)),
+      ],
+      pageSize: 12,
     });
 
-    // Re-run with saved settings
+    if (entry === BACK) continue; // back to main menu
+
     await renderAndExport({
-      inputType:  entry.inputType,
-      qrData:     entry.qrData,
-      dataLabel:  entry.dataLabel,
-      gradient:   entry.gradient,
-      errorLevel: entry.errorLevel,
-      renderMode: entry.renderMode,
+      inputType:   entry.inputType,
+      qrData:      entry.qrData,
+      dataLabel:   entry.dataLabel,
+      gradient:    entry.gradient,
+      errorLevel:  entry.errorLevel,
+      renderMode:  entry.renderMode,
       fromHistory: true,
     });
-    return;
+    continue; // back to main menu after re-render
   }
 
   // ──────────────────────────────────────────────
@@ -95,33 +87,41 @@ export async function runMainFlow() {
   // ──────────────────────────────────────────────
   const errorLevel = await select({
     message: chalk.bold('Error correction level?'),
-    choices: Object.entries(ERROR_LEVELS).map(([k, v]) => ({
-      name:        v.label,
-      value:       k,
-      description: v.desc,
-    })),
+    choices: [
+      { name: '  ←  Back', value: BACK },
+      ...Object.entries(ERROR_LEVELS).map(([k, v]) => ({
+        name: v.label, value: k, description: v.desc,
+      })),
+    ],
     default: 'M',
   });
+  if (errorLevel === BACK) continue;
 
   // ──────────────────────────────────────────────
   // STEP 3 — Visual gradient theme
   // ──────────────────────────────────────────────
   const gradient = isPlain ? 'none' : await select({
     message: chalk.bold('Color theme for the QR code?'),
-    choices: GRADIENT_OPTIONS,
+    choices: [
+      { name: '  ←  Back', value: BACK },
+      ...GRADIENT_OPTIONS,
+    ],
   });
+  if (gradient === BACK) continue;
 
-  // ── Render engine selection ─────────────────────────────────────────────
+  // ── Render engine selection ───────────────────
   const renderMode = isPlain ? 'halfblock' : await select({
     message: chalk.bold('Render engine?'),
     choices: [
-      { name: '  ▀▄  Half-Block    — Standard high-density (default)',        value: 'halfblock' },
-      { name: '  ⣿   Braille       — 4× resolution "Retina" mode',           value: 'braille'  },
-      { name: '  ✦   Particle      — Fly-in "Transformer" animation',         value: 'particle' },
-      { name: '  ░   Matrix Rain   — Animated cascade → gradient settle',     value: 'matrix'   },
-      { name: '  📡  Device Link   — Scan to connect phone → terminal',       value: 'handshake'},
+      { name: '  ←  Back',                                                     value: BACK        },
+      { name: '  ▀▄  Half-Block    — Standard high-density (default)',         value: 'halfblock' },
+      { name: '  ⣿   Braille       — 4× resolution "Retina" mode',            value: 'braille'   },
+      { name: '  ✦   Particle      — Fly-in "Transformer" animation',          value: 'particle'  },
+      { name: '  ░   Matrix Rain   — Animated cascade → gradient settle',      value: 'matrix'    },
+      { name: '  📡  Device Link   — Scan to connect phone → terminal',        value: 'handshake' },
     ],
   });
+  if (renderMode === BACK) continue;
 
   // ──────────────────────────────────────────────
   // STEP 4 — Collect type-specific data
@@ -131,7 +131,7 @@ export async function runMainFlow() {
 
   switch (inputType) {
 
-    // ── URL ─────────────────────────────────────
+    // ── URL ──────────────────────────────────────
     case 'url': {
       if (!isPlain) console.log(chalk.dim('\n  Live preview active — QR updates as you type\n'));
 
@@ -139,11 +139,8 @@ export async function runMainFlow() {
         ? await input({ message: 'URL:' })
         : await liveInput({ label: 'URL', errorLevel, gradient });
 
-      if (rawUrl && !rawUrl.match(/^https?:\/\//i)) {
-        rawUrl = 'https://' + rawUrl;
-      }
-
-      if (!rawUrl) { log.error('No URL provided.'); return; }
+      if (rawUrl && !rawUrl.match(/^https?:\/\//i)) rawUrl = 'https://' + rawUrl;
+      if (!rawUrl) { log.error('No URL provided.'); continue; }
 
       qrData    = rawUrl;
       dataLabel = 'URL';
@@ -153,15 +150,14 @@ export async function runMainFlow() {
           message: `Shorten via TinyURL? ${chalk.dim('(reduces QR complexity)')}`,
           default: false,
         });
-
         if (shouldShorten) {
           const spinner = ora({ text: 'Connecting to TinyURL…', spinner: 'dots' }).start();
           try {
-            const short    = await shortenUrl(qrData);
-            const savings  = estimateSavings(qrData.length, short.length);
+            const short   = await shortenUrl(qrData);
+            const savings = estimateSavings(qrData.length, short.length);
             spinner.succeed(chalk.green('Shortened: ') + chalk.white(short) + chalk.dim(`  (${savings})`));
             qrData = short;
-          } catch (e) {
+          } catch {
             spinner.fail(chalk.yellow('Could not reach TinyURL. Using original URL.'));
           }
         }
@@ -169,11 +165,11 @@ export async function runMainFlow() {
       break;
     }
 
-    // ── WiFi ────────────────────────────────────
+    // ── WiFi ─────────────────────────────────────
     case 'wifi': {
       console.log();
       const ssid = await input({
-        message: chalk.cyan('Network name (SSID):'),
+        message:  chalk.cyan('Network name (SSID):'),
         validate: (v) => v.trim().length > 0 || 'SSID cannot be empty',
       });
 
@@ -195,34 +191,31 @@ export async function runMainFlow() {
         });
       }
 
-      const hidden = await confirm({
-        message: chalk.cyan('Is this a hidden network?'),
-        default: false,
-      });
+      const hidden = await confirm({ message: chalk.cyan('Is this a hidden network?'), default: false });
 
       qrData    = formatWifi({ ssid, password: wifiPassword, security, hidden });
       dataLabel = `WiFi: ${ssid}`;
       break;
     }
 
-    // ── vCard ───────────────────────────────────
+    // ── vCard ─────────────────────────────────────
     case 'vcard': {
       console.log();
       const firstName = await input({ message: chalk.cyan('First name:') });
-      const lastName  = await input({ message: chalk.cyan('Last name:'),    default: '' });
-      const phone     = await input({ message: chalk.cyan('Phone:'),        default: '' });
-      const email     = await input({ message: chalk.cyan('Email:'),        default: '' });
-      const org       = await input({ message: chalk.cyan('Organization:'), default: '' });
-      const url       = await input({ message: chalk.cyan('Website:'),      default: '' });
+      const lastName  = await input({ message: chalk.cyan('Last name:'),      default: '' });
+      const phone     = await input({ message: chalk.cyan('Phone:'),          default: '' });
+      const email     = await input({ message: chalk.cyan('Email:'),          default: '' });
+      const org       = await input({ message: chalk.cyan('Organization:'),   default: '' });
+      const url       = await input({ message: chalk.cyan('Website:'),        default: '' });
 
-      if (!firstName && !lastName) { log.error('Name is required.'); return; }
+      if (!firstName && !lastName) { log.error('Name is required.'); continue; }
 
       qrData    = formatVCard({ firstName, lastName, phone, email, org, url });
       dataLabel = `vCard: ${[firstName, lastName].filter(Boolean).join(' ')}`;
       break;
     }
 
-    // ── Secret ──────────────────────────────────
+    // ── Secret ────────────────────────────────────
     case 'secret': {
       console.log();
       const secret = await password({
@@ -230,7 +223,6 @@ export async function runMainFlow() {
         mask:     '●',
         validate: (v) => v.length > 0 || 'Cannot encode an empty secret',
       });
-
       qrData    = secret;
       dataLabel = 'Secret Text';
       log.warn('Secret encoded — share this QR only with intended recipients.');
@@ -238,9 +230,11 @@ export async function runMainFlow() {
     }
   }
 
-  if (!qrData) return;
+  if (!qrData) continue;
 
   await renderAndExport({ inputType, qrData, dataLabel, gradient, errorLevel, renderMode });
+
+  } // end while
 }
 
 // ── Core render + export pipeline ────────────────────────────────────────────
@@ -391,7 +385,7 @@ async function renderAndExport({
       ? [{ name: '  🔗  Get shareable link', value: 'share' }]
       : []),
     { name: '  ☠   Self-destruct share',    value: 'destruct'  },
-    { name: '  ✓   Done',                   value: 'done'      },
+    { name: '  ←  Back to main menu',        value: 'done'      },
   ];
 
   // Reset terminal state after animations before prompting
