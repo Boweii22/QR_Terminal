@@ -16,10 +16,26 @@ import { printHeader, log } from './src/ui.js';
 import { runMainFlow } from './src/prompts.js';
 import { detectTerminalBgColor } from './src/luma.js';
 
-// Ensure stdout supports TrueColor
-process.env.FORCE_COLOR = process.env.FORCE_COLOR ?? '3';
+// ── CLI flags ────────────────────────────────────────────────────────────────
+const args    = process.argv.slice(2);
+const isPlain = args.includes('--plain') || args.includes('--no-color');
+
+if (isPlain) {
+  process.env._QR_PLAIN  = '1';
+  process.env.FORCE_COLOR = '0';
+} else {
+  // Ensure stdout supports TrueColor
+  process.env.FORCE_COLOR = process.env.FORCE_COLOR ?? '3';
+}
 
 async function main() {
+  if (isPlain) {
+    // Plain mode: minimal header, no color
+    console.log('QR Terminal — plain/no-color mode\n');
+    await runMainFlow();
+    return;
+  }
+
   // ── Splash ──────────────────────────────────────────────────────────────
   process.stdout.write('\x1Bc'); // Full terminal clear (preserves scroll buffer)
 

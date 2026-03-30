@@ -22,7 +22,7 @@ export function printHeader() {
   }
 
   const coloredArt  = gradient(['#FF416C', '#FF4B2B', '#F7971E', '#FFD200', '#4ECDC4', '#556270'])(art);
-  const subtitle    = chalk.dim('  High-Density Half-Block Rendering Engine  ·  v1.0.0');
+  const subtitle    = chalk.dim('  High-Density Half-Block Rendering Engine  ·  v1.1.0');
   const badges      = [
     chalk.bgRgb(40,40,80).rgb(100,180,255)(' URL '),
     chalk.bgRgb(40,40,80).rgb(100,255,160)(' WiFi '),
